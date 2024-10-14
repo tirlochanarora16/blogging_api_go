@@ -29,7 +29,11 @@ func (api ApiRoute) createPost() {
 // getting all the posts
 func (api ApiRoute) getAllPosts() {
 	api.w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(api.w).Encode("hello world")
+	api.w.WriteHeader(http.StatusCreated)
+	res := map[string]string{
+		"msg": "hello world",
+	}
+	json.NewEncoder(api.w).Encode(res)
 }
 
 // updating posts
