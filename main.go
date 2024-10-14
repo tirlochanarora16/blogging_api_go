@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/tirlochanarora16/blogging_api_go/routes"
 )
 
 func main() {
-	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello world")
-	})
+	http.HandleFunc("/posts", routes.HandleRoutes)
 
 	http.ListenAndServe(":3000", nil)
 }
