@@ -22,16 +22,15 @@ func HandleRoutes(w http.ResponseWriter, r *http.Request) {
 }
 
 // creating new blog post
-func (api ApiRoute) createPost() {
-
-}
+func (api ApiRoute) createPost() {}
 
 // getting all the posts
 func (api ApiRoute) getAllPosts() {
 	api.w.Header().Set("Content-Type", "application/json")
 	api.w.WriteHeader(http.StatusCreated)
 	res := map[string]string{
-		"msg": "hello world",
+		"msg":   "hello world",
+		"value": "10",
 	}
 	json.NewEncoder(api.w).Encode(res)
 }
