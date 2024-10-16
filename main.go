@@ -1,8 +1,11 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
 	"github.com/tirlochanarora16/blogging_api_go/db"
@@ -11,7 +14,13 @@ import (
 
 func main() {
 
-	connStr := "user=tirlochan password=password dbname=blog_api sslmode=disable"
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading environment variables from .env file")
+	}
+
+	connStr := os.Getenv("DB_CONN_STR")
 
 	db.InitDB(connStr)
 
