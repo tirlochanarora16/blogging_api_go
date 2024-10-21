@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,9 @@ import (
 )
 
 func main() {
+	migrate := flag.Bool("migrate", false, "Use migrations")
+
+	flag.Parse()
 
 	err := godotenv.Load()
 
@@ -22,7 +26,7 @@ func main() {
 
 	connStr := os.Getenv("DB_CONN_STR")
 
-	db.InitDB(connStr)
+	db.InitDB(connStr, *migrate)
 
 	http.HandleFunc("/posts", routes.HandleRoutes)
 
