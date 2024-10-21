@@ -54,5 +54,5 @@ func runDBMigration() {
 		log.Fatal("Error in applying migration from latest file", err)
 	}
 
-	fmt.Println("Successfully applied migtation to the DB", fileLocation)
+	fmt.Println("Successfully applied migtation to the DB from the file: ", fileLocation)
 }
