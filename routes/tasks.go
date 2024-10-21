@@ -16,8 +16,15 @@ func HandleRoutes(w http.ResponseWriter, r *http.Request) {
 		r: r,
 	}
 
-	if r.Method == "GET" {
+	switch r.Method {
+	case http.MethodGet:
 		api.getAllPosts()
+	case http.MethodPost:
+		api.createPost()
+	case http.MethodPut:
+		api.updatePost()
+	case http.MethodDelete:
+		api.deletePost()
 	}
 }
 
