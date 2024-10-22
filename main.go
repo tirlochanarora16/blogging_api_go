@@ -30,5 +30,9 @@ func main() {
 
 	http.HandleFunc("/posts", routes.HandleRoutes)
 
-	http.ListenAndServe(":3000", nil)
+	err = http.ListenAndServe(":3000", nil)
+
+	if err != nil {
+		log.Fatal("Error starting the server", err)
+	}
 }
