@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type ApiRoute struct {
@@ -41,6 +42,8 @@ func (api ApiRoute) createPost() {
 	req := api.r
 	writer := api.w
 
+	writer.Header().Set("Content-Type", "application/json")
+
 	decoder := json.NewDecoder(req.Body)
 	var post Post
 	err := decoder.Decode(&post)
@@ -49,9 +52,19 @@ func (api ApiRoute) createPost() {
 		log.Fatal("Error in decoding the request body")
 	}
 
-	fmt.Println(post)
+	post.Content = strings.TrimSpace(post.Content)
+	post.Title = strings.TrimSpace(post.Title)
 
-	writer.Header().Set("Content-Type", "application/json")
+	if post.Content == "" || post.Title == "" {
+		err := map[string]string{
+			"error": `Either "content" or "title" property is missing from the body.`,
+		}
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(err)
+		return
+	}
+
+	fmt.Println(post)
 	writer.WriteHeader(http.StatusCreated)
 	json.NewEncoder(writer).Encode(post)
 
