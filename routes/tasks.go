@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/lib/pq"
+	"github.com/tirlochanarora16/blogging_api_go/db"
 )
 
 type ApiRoute struct {
@@ -70,9 +73,30 @@ func (api ApiRoute) createPost() {
 		return
 	}
 
-	fmt.Println(post)
+	// insert the post into the DB
+	var postId int
+	// sqlQuery := fmt.Sprintf("INSERT INTO posts(title, content, tags) values(%s, %s, %s) RETURNING id", post.Title, post.Content, post.Tags)
+	rows, err := db.DB.Query("INSERT INTO posts(title, content, tags) values ($1, $2, $3) RETURNING id", post.Title, post.Content, pq.Array(post.Tags))
+
+	fmt.Println(rows)
+
+	if err != nil {
+		errorMsg = map[string]string{
+			"error": fmt.Sprintf("Error inserting post into DB. %s", err),
+		}
+		fmt.Println(err)
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(errorMsg)
+		return
+	}
+
+	successResponse := map[string]any{
+		"id":   postId,
+		"post": post,
+	}
+
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(post)
+	json.NewEncoder(writer).Encode(successResponse)
 
 }
 
