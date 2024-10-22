@@ -3,7 +3,6 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -42,6 +41,8 @@ func (api ApiRoute) createPost() {
 	req := api.r
 	writer := api.w
 
+	var errorMsg map[string]string = make(map[string]string)
+
 	writer.Header().Set("Content-Type", "application/json")
 
 	decoder := json.NewDecoder(req.Body)
@@ -49,18 +50,23 @@ func (api ApiRoute) createPost() {
 	err := decoder.Decode(&post)
 
 	if err != nil {
-		log.Fatal("Error in decoding the request body")
+		errorMsg = map[string]string{
+			"error": "Error in decoding the request body",
+		}
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(errorMsg)
+		return
 	}
 
 	post.Content = strings.TrimSpace(post.Content)
 	post.Title = strings.TrimSpace(post.Title)
 
 	if post.Content == "" || post.Title == "" {
-		err := map[string]string{
-			"error": `Either "content" or "title" property is missing from the body.`,
+		errorMsg = map[string]string{
+			"error": `"content" or "title" cannot be empty.`,
 		}
 		writer.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(writer).Encode(err)
+		json.NewEncoder(writer).Encode(errorMsg)
 		return
 	}
 
