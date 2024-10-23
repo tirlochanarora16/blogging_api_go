@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -135,6 +136,7 @@ func (api ApiRoute) getAllPosts() {
 		posts = append(posts, post)
 	}
 
+	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(api.w).Encode(posts)
 }
 
@@ -142,4 +144,52 @@ func (api ApiRoute) getAllPosts() {
 func (api ApiRoute) updatePost() {}
 
 // deleting post
-func (api ApiRoute) deletePost() {}
+func (api ApiRoute) deletePost() {
+	writer := api.w
+	res := api.r
+
+	writer.Header().Set("Content-type", "application/json")
+
+	id := strings.TrimSpace(res.URL.Query().Get("id"))
+
+	if id == "" {
+		errMsg := map[string]string{
+			"error": "ID cannot be empty",
+		}
+		json.NewEncoder(writer).Encode(errMsg)
+		return
+	}
+
+	intId, err := strconv.Atoi(id)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	result, err := db.DB.Exec("DELETE FROM posts WHERE id = $1", intId)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	if rowsAffected == 0 {
+		writer.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(writer).Encode(map[string]string{"error": "Invalid ID provided"})
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(map[string]string{"msg": "Entry successfully deleted"})
+}
