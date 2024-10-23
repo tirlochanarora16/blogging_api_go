@@ -141,7 +141,64 @@ func (api ApiRoute) getAllPosts() {
 }
 
 // updating posts
-func (api ApiRoute) updatePost() {}
+func (api ApiRoute) updatePost() {
+	writer := api.w
+	req := api.r
+
+	writer.Header().Set("Content-type", "application/json")
+
+	id := strings.TrimSpace(req.URL.Query().Get("id"))
+
+	if id == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(map[string]string{"error": "ID cannot be empty"})
+		return
+	}
+
+	idInt, err := strconv.Atoi(id)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	var post Post
+	err = decoder.Decode(&post)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	result, err := db.DB.Exec("Update posts SET title = $1, content = $2, tags = $3, updated_at = NOW() WHERE id = $4", post.Title, post.Content, pq.Array(post.Tags), idInt)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	if rowsAffected == 0 {
+		writer.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(writer).Encode(map[string]string{"error": "Invalid ID provided"})
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(map[string]string{"msg": "Entry Updated successfully"})
+
+}
 
 // deleting post
 func (api ApiRoute) deletePost() {
