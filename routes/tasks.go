@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/tirlochanarora16/blogging_api_go/db"
@@ -37,6 +38,15 @@ type Post struct {
 	Title   string   `json:"title"`
 	Content string   `json:"content"`
 	Tags    []string `json:"tags"`
+}
+
+type SinglePost struct {
+	Id        int       `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Tags      []string  `json:"tags"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // creating new blog post
@@ -76,9 +86,7 @@ func (api ApiRoute) createPost() {
 	// insert the post into the DB
 	var postId int
 	// sqlQuery := fmt.Sprintf("INSERT INTO posts(title, content, tags) values(%s, %s, %s) RETURNING id", post.Title, post.Content, post.Tags)
-	rows, err := db.DB.Query("INSERT INTO posts(title, content, tags) values ($1, $2, $3) RETURNING id", post.Title, post.Content, pq.Array(post.Tags))
-
-	fmt.Println(rows)
+	_, err = db.DB.Query("INSERT INTO posts(title, content, tags) values ($1, $2, $3) RETURNING id", post.Title, post.Content, pq.Array(post.Tags))
 
 	if err != nil {
 		errorMsg = map[string]string{
@@ -102,13 +110,32 @@ func (api ApiRoute) createPost() {
 
 // getting all the posts
 func (api ApiRoute) getAllPosts() {
-	api.w.Header().Set("Content-Type", "application/json")
-	api.w.WriteHeader(http.StatusCreated)
-	res := map[string]string{
-		"msg":   "hello world",
-		"value": "10",
+	writer := api.w
+	writer.Header().Set("Content-type", "application/json")
+	rows, err := db.DB.Query("SELECT id, title, content, tags, created_at, updated_at FROM posts")
+
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(writer).Encode(err)
+		return
 	}
-	json.NewEncoder(api.w).Encode(res)
+
+	var posts []SinglePost
+
+	for rows.Next() {
+		var post SinglePost
+
+		err := rows.Scan(&post.Id, &post.Title, &post.Content, pq.Array(&post.Tags), &post.CreatedAt, &post.UpdatedAt)
+
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			panic(err)
+		}
+
+		posts = append(posts, post)
+	}
+
+	json.NewEncoder(api.w).Encode(posts)
 }
 
 // updating posts
