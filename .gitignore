@@ -3,3 +3,4 @@
 **/*  
 !**/*.go
 !.gitignore
+!docker-compose.yml
